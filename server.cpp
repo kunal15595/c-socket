@@ -7,6 +7,7 @@
 #include <errno.h>//for errno
 #include "boost/threadpool.hpp"
 #include <csignal>//for signal func
+#include "header.h"
 
 
 #define BUF_SIZE 1024
@@ -66,8 +67,7 @@ class send_udp_port{
 
             int udp_port=ntohs(serv_addr_udp.sin_port);
 
-            cout<<udp_port<<endl;
-
+             
 
             close(this->connfd);
         }
