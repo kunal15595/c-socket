@@ -30,11 +30,14 @@ class send_udp_port{
         }
         void run(){
             cout<<this->connfd<<endl; 
+            write(connfd,"Hello",5);
+            close(this->connfd);
         }
 };
 
 int main(int argc, char *argv[]){
-    int listenfd=0,connfd=0,tcp_port=0;
+    int listenfd=0,connfd=0;
+    int tcp_port=0;
 
     struct sockaddr_in serv_addr;
     char buf[BUF_SIZE];
@@ -52,15 +55,6 @@ int main(int argc, char *argv[]){
         cerr<<"Errno "<<errno<<endl;
         return -1;
     }
-
-
-
-    //AF_INET tell that the connection is with different machine
-    //AF_UNIX connect inside same machine
-    serv_addr.sin_family = AF_INET;
-
-    //To accept connctions from all IPs
-    serv_addr.sin_addr.s_addr=htonl(INADDR_ANY);
 
     //optstring(last argument in getopt) is a string containing the legitimate option characters.
     //If such a character is followed by a colon, the option requires an
@@ -84,11 +78,24 @@ int main(int argc, char *argv[]){
     if(tcp_port==0)
         tcp_port=8787;
 
-    serv_addr.sin_port=htonl(tcp_port);
+    memset(&serv_addr, '0', sizeof(serv_addr));
 
-    if(bind(listenfd,(const struct sockaddr *)&serv_addr,sizeof(serv_addr))==-1){
+    //AF_INET tell that the connection is with different machine
+    //AF_UNIX connect inside same machine
+    serv_addr.sin_family = AF_INET;
+
+    //To accept connctions from all IPs
+    serv_addr.sin_addr.s_addr=htonl(INADDR_ANY);
+    //The htonl(uint32_t hostlong) function converts the unsigned integer 
+    //hostlong from host byte order to network byte order.
+    //htonl was giving wrong value htons gives correct
+    serv_addr.sin_port=htons(tcp_port);
+
+    if(bind(listenfd,(struct sockaddr *)&serv_addr,sizeof(serv_addr))==-1){
         cerr<<"Error:Binding with port "<<tcp_port<<" failed"<<endl;
         cerr<<"Errno "<<errno<<endl;
+        if(errno == EADDRINUSE)
+            cerr<<"Another socket is already listening on the same port"<<endl;
         return -1;
     }
 
@@ -118,10 +125,18 @@ int main(int argc, char *argv[]){
     
     while(!stop){
         connfd = accept(listenfd, (struct sockaddr*)NULL ,NULL); // accept awaiting request
-        send_udp_port *temp=new send_udp_port(connfd);
-        boost::threadpool::schedule(tp,boost::shared_ptr<send_udp_port>(temp));
-        sleep(1);
+        if(connfd!=-1){
+            send_udp_port *temp=new send_udp_port(connfd);
+            //http://stackoverflow.com/questions/7896223/
+            //how-to-schedule-member-function-for-execution-in-boostthreadpoool
+            boost::threadpool::schedule(tp,boost::shared_ptr<send_udp_port>(temp));
+        }else{
+            //sleep for 0.5 seconds
+            usleep(500000);
+        }
     }
+
+    tp.wait();//wait until all tasks are finished
     
     return 0;
 }
