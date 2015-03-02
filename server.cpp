@@ -66,6 +66,9 @@ class send_udp_port{
             getsockname(udp_fd,(struct sockaddr *)&serv_addr_udp,&len);
 
             int udp_port=ntohs(serv_addr_udp.sin_port);
+
+            cout<<"UDP port "<<udp_port<<endl; 
+
             char message_buf[BUF_SIZE];
             struct message_header header;
             
@@ -78,21 +81,28 @@ class send_udp_port{
 
             write(this->connfd,&header,sizeof(header));
             write(this->connfd,message_buf,temp_str.size());
-            write(1,message_buf,temp_str.size());
 
             close(this->connfd);
            
             int count;
             struct message_header input_header;
+            struct sockaddr from_socket_addr;
+            socklen_t temp_len;
+            temp_len=sizeof(from_socket_addr);
+            //recvfrom flag MSG_WAITALL
+            //This flag requests that the operation block until the full request is satisfied
 
-            //while((count=recv(udp_fd,message_buf,sizeof(message_header),0))==sizeof(message_header)){
-                //memcpy(&input_header,message_buf,count);       
-                //if((count=read(udp_fd,message_buf,input_header.message_length))==input_header.message_length){
-                    //message_buf[count]='\0';
-                    //cout<<(char *)message_buf<<endl;
-                //}
-            //}
+            while((count=recvfrom(udp_fd,message_buf,sizeof(message_header),MSG_WAITALL,
+                            &from_socket_addr,&temp_len))==sizeof(message_header)){
+                memcpy(&input_header,message_buf,count);       
+                if((count=recvfrom(udp_fd,message_buf,input_header.message_length,
+                         MSG_WAITALL,&from_socket_addr,&temp_len))==input_header.message_length){
+                    message_buf[count]='\0';
+                    cout<<(char *)message_buf<<endl;
+                }
+            }
             close(udp_fd);
+            cout<<"Here"<<endl;
 
         }
 };

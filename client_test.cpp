@@ -59,7 +59,35 @@ int main(int argc, char *argv[])
         cout<<input_header.message_length<<endl;
         if((count=read(sockfd,message_buf,input_header.message_length))==input_header.message_length){
             message_buf[count]='\0';
-            cout<<message_buf<<endl;
+            int udp_port=atoi(message_buf);
+            cout<<udp_port<<endl;
+            struct sockaddr_in udp_socket;
+            memset(&udp_socket,0,sizeof(udp_socket));
+            int udp_fd=0;
+            udp_fd = socket(AF_INET, SOCK_DGRAM, 0);
+            if (udp_fd ==-1)
+            {
+                fprintf(stderr, "Could not create socket.\n");
+                exit(-1);
+            }   
+            if(inet_pton(AF_INET, argv[1], &udp_socket.sin_addr)<=0)
+            {
+                printf("\n inet_pton error occured\n");
+                return 1;
+            } 
+            udp_socket.sin_family=AF_INET;
+            udp_socket.sin_port = htons(udp_port); 
+
+            struct message_header header;
+            header.message_type=3;
+            header.message_length=10;
+            string temp1="shubhamers";
+            socklen_t temp_len=sizeof(udp_socket);
+            sendto(udp_fd,&header,sizeof(header),MSG_WAITALL,(struct sockaddr *)&udp_socket,temp_len);
+            sendto(udp_fd,temp1.c_str(),temp1.size(),MSG_WAITALL,(struct sockaddr *)&udp_socket,temp_len);
+            //You would think that close() would unblock the recvfrom(), but it doesn't on linux.
+            shutdown(udp_fd, SHUT_RDWR);
+            close(udp_fd);
         }else{
             cout<<"Hi"<<endl;
         }
