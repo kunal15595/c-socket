@@ -19,8 +19,19 @@ using namespace boost::threadpool;
 
 
 void ctrl_c_signal_handler(int sig_num);
-void send_udp_port(int connfd);
 bool stop;
+
+class send_udp_port{
+    private:
+        int connfd;
+    public:
+        send_udp_port(int connfd){
+            this->connfd=connfd;
+        }
+        void run(){
+            cout<<this->connfd<<endl; 
+        }
+};
 
 int main(int argc, char *argv[]){
     int listenfd=0,connfd=0,tcp_port=0;
@@ -107,7 +118,8 @@ int main(int argc, char *argv[]){
     
     while(!stop){
         connfd = accept(listenfd, (struct sockaddr*)NULL ,NULL); // accept awaiting request
-        tp.schedule(&send_udp_port,connfd);
+        send_udp_port *temp=new send_udp_port(connfd);
+        boost::threadpool::schedule(tp,boost::shared_ptr<send_udp_port>(temp));
         sleep(1);
     }
     
@@ -119,6 +131,4 @@ void ctrl_c_signal_handler(int sig_num){
     stop=true;
 }
 
-void send_udp_port(int connfd){
-   cout<<connfd<<endl; 
-}
+
