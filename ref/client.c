@@ -54,6 +54,8 @@ int main(int argc, char *argv[])
         }
     } 
 
+    printf("\n");
+
     if(n < 0)
     {
         printf("\n Read error \n");

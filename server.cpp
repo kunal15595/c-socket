@@ -30,7 +30,45 @@ class send_udp_port{
         }
         void run(){
             cout<<this->connfd<<endl; 
-            write(connfd,"Hello",5);
+
+            struct sockaddr_in serv_addr_udp;
+            memset(&serv_addr_udp,'0',sizeof(serv_addr_udp));
+            serv_addr_udp.sin_family = AF_INET;
+            serv_addr_udp.sin_addr.s_addr=htonl(INADDR_ANY);
+
+            //0 means that it will choose a random port
+            serv_addr_udp.sin_port=htons(0);
+
+            int udp_fd=0;
+            if((udp_fd = socket(AF_INET, SOCK_DGRAM | SOCK_NONBLOCK, 0))== -1)
+            {
+                cerr<<"Error : Could not create udp socket"<<endl;
+                cerr<<"Errno "<<errno<<endl;
+                close(this->connfd);
+                return;
+            }
+            
+            if(bind(udp_fd,(struct sockaddr *)&serv_addr_udp,sizeof(serv_addr_udp))==-1){
+                cerr<<"Error:Binding with udp port failed"<<endl;
+                cerr<<"Errno "<<errno<<endl;
+                if(errno == EADDRINUSE)
+                    cerr<<"Another socket is already listening on the same port"<<endl;
+                close(this->connfd);
+                return;
+            }
+
+            //No listen in case of udp socket
+            
+            //To get port number assigned to socket
+            memset(&serv_addr_udp,'0',sizeof(serv_addr_udp));
+            socklen_t len=(socklen_t)sizeof(serv_addr_udp);
+            getsockname(udp_fd,(struct sockaddr *)&serv_addr_udp,&len);
+
+            int udp_port=ntohs(serv_addr_udp.sin_port);
+
+            cout<<udp_port<<endl;
+
+
             close(this->connfd);
         }
 };
@@ -112,8 +150,6 @@ int main(int argc, char *argv[]){
         if(errno == EADDRINUSE)
             cerr<<"Another socket is already listening on the same port"<<endl;
         return -1;
-    }else{
-        cout<<"here"<<endl;
     }
 
     cout<<"Lintning on TCP port "<<tcp_port<<endl;
@@ -135,7 +171,8 @@ int main(int argc, char *argv[]){
             usleep(500000);
         }
     }
-
+    
+    close(listenfd);
     tp.wait();//wait until all tasks are finished
     
     return 0;
