@@ -8,9 +8,9 @@
 #include "boost/threadpool.hpp"
 #include <csignal>//for signal func
 #include "header.h"
+#include <sstream>
 
 
-#define BUF_SIZE 1024
 #define TCP_PORT 8787
 #define QUEUE_SIZE 10
 #define POOL_SIZE 4
@@ -30,7 +30,6 @@ class send_udp_port{
             this->connfd=connfd;
         }
         void run(){
-            cout<<this->connfd<<endl; 
 
             struct sockaddr_in serv_addr_udp;
             memset(&serv_addr_udp,'0',sizeof(serv_addr_udp));
@@ -41,7 +40,8 @@ class send_udp_port{
             serv_addr_udp.sin_port=htons(0);
 
             int udp_fd=0;
-            if((udp_fd = socket(AF_INET, SOCK_DGRAM | SOCK_NONBLOCK, 0))== -1)
+            //Not SOCK_NONBLOCK
+            if((udp_fd = socket(AF_INET, SOCK_DGRAM, 0))== -1)
             {
                 cerr<<"Error : Could not create udp socket"<<endl;
                 cerr<<"Errno "<<errno<<endl;
@@ -66,10 +66,34 @@ class send_udp_port{
             getsockname(udp_fd,(struct sockaddr *)&serv_addr_udp,&len);
 
             int udp_port=ntohs(serv_addr_udp.sin_port);
+            char message_buf[BUF_SIZE];
+            struct message_header header;
+            
+            header.message_type=2;
+            stringstream temp;
+            temp<<udp_port;
+            string temp_str=temp.str();
+            header.message_length=temp_str.size();
+            temp_str.copy(message_buf,temp_str.size(),0);
 
-             
+            write(this->connfd,&header,sizeof(header));
+            write(this->connfd,message_buf,temp_str.size());
+            write(1,message_buf,temp_str.size());
 
             close(this->connfd);
+           
+            int count;
+            struct message_header input_header;
+
+            //while((count=recv(udp_fd,message_buf,sizeof(message_header),0))==sizeof(message_header)){
+                //memcpy(&input_header,message_buf,count);       
+                //if((count=read(udp_fd,message_buf,input_header.message_length))==input_header.message_length){
+                    //message_buf[count]='\0';
+                    //cout<<(char *)message_buf<<endl;
+                //}
+            //}
+            close(udp_fd);
+
         }
 };
 
@@ -78,7 +102,6 @@ int main(int argc, char *argv[]){
     int tcp_port=0;
 
     struct sockaddr_in serv_addr;
-    char buf[BUF_SIZE];
     char opt;
 
     //AF_INET connection with differnent machine
