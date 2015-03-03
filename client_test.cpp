@@ -51,6 +51,10 @@ int main(int argc, char *argv[])
 
     struct message_header input_header;
     int count;
+    struct message_header req_header;
+    req_header.message_type=1;
+    req_header.message_length=0;
+    write(sockfd,&req_header,sizeof(req_header));
     while ( (count = read(sockfd, message_buf, sizeof(struct message_header))) > 0)
     {
         message_buf[count] = '\0';
@@ -86,6 +90,14 @@ int main(int argc, char *argv[])
             sendto(udp_fd,&header,sizeof(header),MSG_WAITALL,(struct sockaddr *)&udp_socket,temp_len);
             sendto(udp_fd,temp1.c_str(),temp1.size(),MSG_WAITALL,(struct sockaddr *)&udp_socket,temp_len);
             //You would think that close() would unblock the recvfrom(), but it doesn't on linux.
+            struct message_header ack_recv_header;
+            if((count=recvfrom(udp_fd,&ack_recv_header,sizeof(ack_recv_header),MSG_WAITALL,
+                            (struct sockaddr *)&udp_socket,&temp_len))==sizeof(ack_recv_header)){
+                if(ack_recv_header.message_type==4){
+                    cout<<"ACK recieved"<<endl;
+                }
+            }
+
             shutdown(udp_fd, SHUT_RDWR);
             close(udp_fd);
         }else{
