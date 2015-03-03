@@ -26,6 +26,7 @@ bool stop;
 int main(int argc, char *argv[]){
     int listenfd=0,connfd=0;
     int tcp_port=0;
+    int num_threads=POOL_SIZE;
 
     struct sockaddr_in serv_addr;
     char opt;
@@ -48,10 +49,13 @@ int main(int argc, char *argv[]){
     //argument, so getopt() places a pointer to the following text in the
     //same argv-element, or the text of the following argv-element, in
     //optarg.  Two colons mean an option takes an optional arg
-    while ((opt = getopt (argc, argv, "t:")) != -1){
+    while ((opt = getopt (argc, argv, "p:t:")) != -1){
         switch(opt){
-            case 't':
+            case 'p':
                 tcp_port=atoi(optarg);
+                break;
+            case 't':
+                num_threads=atoi(optarg);
                 break;
             case '?':
                 //getopt gives ? if it is unable to recoganize an option
@@ -64,6 +68,7 @@ int main(int argc, char *argv[]){
 
     if(tcp_port==0)
         tcp_port=8787;
+   
 
     memset(&serv_addr, '0', sizeof(serv_addr));
 
@@ -103,7 +108,8 @@ int main(int argc, char *argv[]){
 
     cout<<"Lintning on TCP port "<<tcp_port<<endl;
 
-    pool tp(POOL_SIZE);
+    pool tp(num_threads);
+    cout<<"Thread pool size "<<tp.size()<<endl;
 
     signal(SIGINT,ctrl_c_signal_handler);
     stop=false;
