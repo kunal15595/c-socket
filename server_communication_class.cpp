@@ -90,19 +90,38 @@ void server_communication_class::run(){
     temp_len=sizeof(from_socket_addr);
     //recvfrom flag MSG_WAITALL
     //This flag requests that the operation block until the full request is satisfied
+    
+    bool done=false;
 
-    if((count=recvfrom(udp_fd,message_buf,sizeof(struct message_header),MSG_WAITALL,
+    while(!done){
+        if((count=recvfrom(udp_fd,message_buf,sizeof(struct message_header),MSG_WAITALL,
                     &from_socket_addr,&temp_len))==sizeof(struct message_header)){
-        memcpy(&input_header,message_buf,count);       
-        if((count=recvfrom(udp_fd,message_buf,input_header.message_length,
-                        MSG_WAITALL,&from_socket_addr,&temp_len))==input_header.message_length){
-            message_buf[count]='\0';
-            cout<<(char *)message_buf<<endl;
+            memcpy(&input_header,message_buf,count);       
+            if(input_header.message_length==0){
+                done=true;
+                cout<<"Ending received"<<endl;
+                ack_header.message_type=4;
+                ack_header.message_length=0;
+                sendto(udp_fd,&ack_header,sizeof(ack_header),MSG_WAITALL,(struct sockaddr *)&from_socket_addr,temp_len);
+                
+            }else if((count=recvfrom(udp_fd,message_buf,input_header.message_length,
+                            MSG_WAITALL,&from_socket_addr,&temp_len))==input_header.message_length){
+                message_buf[count]='\0';
+                cout<<(char *)message_buf<<endl;
 
-            ack_header.message_type=4;
-            ack_header.message_length=0;
+                ack_header.message_type=4;
+                ack_header.message_length=0;
 
-            sendto(udp_fd,&ack_header,sizeof(ack_header),MSG_WAITALL,(struct sockaddr *)&from_socket_addr,temp_len);
+                sendto(udp_fd,&ack_header,sizeof(ack_header),MSG_WAITALL,(struct sockaddr *)&from_socket_addr,temp_len);
+            }else{
+                cerr<<"Error on port "<<udp_port<<endl;
+                done=true;
+            }
+
+
+        }else{
+            cerr<<"Error on port "<<udp_port<<endl;
+            done=true;
         }
     }
     close(udp_fd);

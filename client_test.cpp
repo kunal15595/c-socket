@@ -87,9 +87,24 @@ int main(int argc, char *argv[])
             header.message_length=10;
             string temp1="shubhamers";
             socklen_t temp_len=sizeof(udp_socket);
+            int j=3;
+            while(j){
+                sendto(udp_fd,&header,sizeof(header),MSG_WAITALL,(struct sockaddr *)&udp_socket,temp_len);
+                sendto(udp_fd,temp1.c_str(),temp1.size(),MSG_WAITALL,(struct sockaddr *)&udp_socket,temp_len);
+                //You would think that close() would unblock the recvfrom(), but it doesn't on linux.
+                struct message_header ack_recv_header;
+                if((count=recvfrom(udp_fd,&ack_recv_header,sizeof(ack_recv_header),MSG_WAITALL,
+                                (struct sockaddr *)&udp_socket,&temp_len))==sizeof(ack_recv_header)){
+                    if(ack_recv_header.message_type==4){
+                        cout<<"ACK recieved"<<endl;
+                    }
+                }
+                j--;
+            }
+            header.message_type=3;
+            header.message_length=0;
             sendto(udp_fd,&header,sizeof(header),MSG_WAITALL,(struct sockaddr *)&udp_socket,temp_len);
-            sendto(udp_fd,temp1.c_str(),temp1.size(),MSG_WAITALL,(struct sockaddr *)&udp_socket,temp_len);
-            //You would think that close() would unblock the recvfrom(), but it doesn't on linux.
+            cout<<"ending sent"<<endl;
             struct message_header ack_recv_header;
             if((count=recvfrom(udp_fd,&ack_recv_header,sizeof(ack_recv_header),MSG_WAITALL,
                             (struct sockaddr *)&udp_socket,&temp_len))==sizeof(ack_recv_header)){
@@ -98,7 +113,9 @@ int main(int argc, char *argv[])
                 }
             }
 
-            shutdown(udp_fd, SHUT_RDWR);
+            //Shutdown is needed otherwise the recvfrom blocks close does not help
+            //shutdown is for connection not for udp
+            //cout<<"Shutdown status "<<shutdown(udp_fd, SHUT_RDWR)<<endl;
             close(udp_fd);
         }else{
             cout<<"Hi"<<endl;
