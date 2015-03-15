@@ -64,7 +64,7 @@ int main(int argc, char *argv[])
         if((count=read(sockfd,message_buf,input_header.message_length))==input_header.message_length){
             message_buf[count]='\0';
             int udp_port=atoi(message_buf);
-            cout<<udp_port<<endl;
+            cout<<"Udp port: "<<udp_port<<endl;
             struct sockaddr_in udp_socket;
             memset(&udp_socket,0,sizeof(udp_socket));
             int udp_fd=0;
@@ -95,6 +95,7 @@ int main(int argc, char *argv[])
                 struct message_header ack_recv_header;
                 if((count=recvfrom(udp_fd,&ack_recv_header,sizeof(ack_recv_header),MSG_WAITALL,
                                 (struct sockaddr *)&udp_socket,&temp_len))==sizeof(ack_recv_header)){
+
                     if(ack_recv_header.message_type==4){
                         cout<<"ACK recieved"<<endl;
                     }

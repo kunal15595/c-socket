@@ -5,8 +5,7 @@
 <ul>
 <li>compiling server
 <ul>
-<li>Dependency- sudo apt-get install libboost-all-dev</li>
-<li>Compiling command- g++ server.cpp -o server -pthread -lboost<em>thread -lboost</em>system</li>
+<li>Compiling command- gcc server.c server<em>communication</em>class.c threadpool.c -o server -pthread</li>
 </ul></li>
 <li>server usage ./server [-p tcp<em>port] [-t thread</em>pool_size]</li>
 <li>You may get Adress already in use error if you run server program twice one after the other give a gap of 30 secs

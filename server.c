@@ -1,26 +1,24 @@
-#include <iostream>
+#include <stdio.h>
 #include <arpa/inet.h>//for htonl and sockaddr_in
 #include <unistd.h>//for getopt,read,write,close
-#include <cstdlib>//for atoi
-#include <cstring>//for memset and memcpy
+#include <stdlib.h>//for atoi
+#include <string.h>//for memset and memcpy
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <errno.h>//for errno
-#include "boost/threadpool.hpp"
-#include <csignal>//for signal func
+#include <signal.h>//for signal func
 #include "server_communication_class.h"
-
+#include "threadpool.h"
+#include <stdbool.h>
 
 #define TCP_PORT 8787
 #define QUEUE_SIZE 10
 #define POOL_SIZE 4
 
-using namespace std;
-using namespace boost::threadpool;
-
 
 void ctrl_c_signal_handler(int sig_num);
 bool stop;
+const int queue_size=15;
 
 
 int main(int argc, char *argv[]){
@@ -39,8 +37,8 @@ int main(int argc, char *argv[]){
     //error EAGAIN or EWOULDBLOCK
     if((listenfd = socket(AF_INET, SOCK_STREAM | SOCK_NONBLOCK, 0))== -1)
     {
-        cerr<<"Error : Could not create socket"<<endl;
-        cerr<<"Errno "<<errno<<endl;
+        printf("Error : Could not create socket\n");
+        printf("Errno %d\n",errno);
         return -1;
     }
 
@@ -59,8 +57,8 @@ int main(int argc, char *argv[]){
                 break;
             case '?':
                 //getopt gives ? if it is unable to recoganize an option
-                cerr<<"Error:wrong format"<<endl;
-                cout<<"Usage ./server [-t tcp_port]"<<endl;
+                printf("Error:wrong format\n");
+                printf("Usage ./server [-t tcp_port]\n");
                 return -1;
                 break;
         }
@@ -84,10 +82,10 @@ int main(int argc, char *argv[]){
     serv_addr.sin_port=htons(tcp_port);
 
     if(bind(listenfd,(struct sockaddr *)&serv_addr,sizeof(serv_addr))==-1){
-        cerr<<"Error:Bindint with port "<<tcp_port<<" failed"<<endl;
-        cerr<<"Errno "<<errno<<endl;
+        printf("Error:Bindint with port # %d failed\n",tcp_port);
+        printf("Errno %d\n",errno);
         if(errno == EADDRINUSE)
-            cerr<<"Another socket is already listening on the same port"<<endl;
+            printf("Another socket is already listening on the same port\n");
         return -1;
     }
 
@@ -99,17 +97,17 @@ int main(int argc, char *argv[]){
     // underlying protocol supports retransmission, 
     //the request may be ignored so that a later reattempt at connection succeeds.
     if(listen(listenfd, QUEUE_SIZE) == -1){
-        cerr<<"Error:Failed to listen"<<endl;
-        cerr<<"Errno "<<errno<<endl;
+        printf("Error:Failed to listen\n");
+        printf("Errno %d\n",errno);
         if(errno == EADDRINUSE)
-            cerr<<"Another socket is already listening on the same port"<<endl;
+            printf("Another socket is already listening on the same port\n");
         return -1;
     }
 
-    cout<<"Lintning on TCP port "<<tcp_port<<endl;
+    printf("Lintning on TCP port %d\n",tcp_port);
 
-    pool tp(num_threads);
-    cout<<"Thread pool size "<<tp.size()<<endl;
+    threadpool_t *tp=threadpool_create(num_threads,queue_size,0);
+    printf("Thread pool size %d\n",tp->thread_count);
 
     signal(SIGINT,ctrl_c_signal_handler);
     stop=false;
@@ -117,10 +115,9 @@ int main(int argc, char *argv[]){
     while(!stop){
         connfd = accept(listenfd, (struct sockaddr*)NULL ,NULL); // accept awaiting request
         if(connfd!=-1){
-            server_communication_class *temp=new server_communication_class(connfd);
+            threadpool_add(tp,server_communication_func,connfd,0);
             //http://stackoverflow.com/questions/7896223/
             //how-to-schedule-member-function-for-execution-in-boostthreadpoool
-            boost::threadpool::schedule(tp,boost::shared_ptr<server_communication_class>(temp));
         }else{
             //sleep for 0.5 seconds
             usleep(500000);
@@ -128,13 +125,13 @@ int main(int argc, char *argv[]){
     }
     
     close(listenfd);
-    tp.wait();//wait until all tasks are finished
+    threadpool_destroy(tp,0);//wait until all tasks are finished
     
     return 0;
 }
 
 void ctrl_c_signal_handler(int sig_num){
-    cout<<"Exiting"<<endl;
+    printf("Exiting\n");
     stop=true;
 }
 
