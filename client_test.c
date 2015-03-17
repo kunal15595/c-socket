@@ -10,13 +10,11 @@
 #include <errno.h>
 #include <arpa/inet.h> 
 #include "header.h"
-#include <iostream>
-using namespace std;
 
 int main(int argc, char *argv[])
 {
     int sockfd = 0, n = 0;
-    char message_buf[1024];
+    char msg_buf[1024];
     struct sockaddr_in serv_addr; 
 
     if(argc != 2)
@@ -25,7 +23,7 @@ int main(int argc, char *argv[])
         return 1;
     } 
 
-    memset(message_buf, '0',sizeof(message_buf));
+    memset(msg_buf, '0',sizeof(msg_buf));
     if((sockfd = socket(AF_INET, SOCK_STREAM, 0)) < 0)
     {
         printf("\n Error : Could not create socket \n");
@@ -55,16 +53,19 @@ int main(int argc, char *argv[])
     req_header.message_type=1;
     req_header.message_length=0;
     write(sockfd,&req_header,sizeof(req_header));
-    while ( (count = read(sockfd, message_buf, sizeof(struct message_header))) > 0)
+    while ( (count = read(sockfd, msg_buf, sizeof(struct message_header))) > 0)
     {
-        message_buf[count] = '\0';
-        memcpy(&input_header,message_buf,count);       
-        cout<<input_header.message_type<<endl;
-        cout<<input_header.message_length<<endl;
-        if((count=read(sockfd,message_buf,input_header.message_length))==input_header.message_length){
-            message_buf[count]='\0';
-            int udp_port=atoi(message_buf);
-            cout<<"Udp port: "<<udp_port<<endl;
+        msg_buf[count] = '\0';
+        memcpy(&input_header,msg_buf,count);  
+
+        printf("%d\n", input_header.message_type);
+        printf("%d\n", input_header.message_length);
+
+        if((count=read(sockfd,msg_buf,input_header.message_length))==input_header.message_length){
+            msg_buf[count]='\0';
+            int udp_port=atoi(msg_buf);
+            printf("Udp port: %d\n", udp_port);
+
             struct sockaddr_in udp_socket;
             memset(&udp_socket,0,sizeof(udp_socket));
             int udp_fd=0;
@@ -85,19 +86,19 @@ int main(int argc, char *argv[])
             struct message_header header;
             header.message_type=3;
             header.message_length=10;
-            string temp1="shubhamers";
+            char temp1[]="shubhamers";
             socklen_t temp_len=sizeof(udp_socket);
             int j=3;
             while(j){
                 sendto(udp_fd,&header,sizeof(header),MSG_WAITALL,(struct sockaddr *)&udp_socket,temp_len);
-                sendto(udp_fd,temp1.c_str(),temp1.size(),MSG_WAITALL,(struct sockaddr *)&udp_socket,temp_len);
+                sendto(udp_fd,temp1,sizeof(temp1),MSG_WAITALL,(struct sockaddr *)&udp_socket,temp_len);
                 //You would think that close() would unblock the recvfrom(), but it doesn't on linux.
                 struct message_header ack_recv_header;
                 if((count=recvfrom(udp_fd,&ack_recv_header,sizeof(ack_recv_header),MSG_WAITALL,
                                 (struct sockaddr *)&udp_socket,&temp_len))==sizeof(ack_recv_header)){
 
                     if(ack_recv_header.message_type==4){
-                        cout<<"ACK recieved"<<endl;
+                        printf("ACK recieved\n");
                     }
                 }
                 j--;
@@ -105,12 +106,13 @@ int main(int argc, char *argv[])
             header.message_type=3;
             header.message_length=0;
             sendto(udp_fd,&header,sizeof(header),MSG_WAITALL,(struct sockaddr *)&udp_socket,temp_len);
-            cout<<"ending sent"<<endl;
+            printf("ending sent\n");
+            
             struct message_header ack_recv_header;
             if((count=recvfrom(udp_fd,&ack_recv_header,sizeof(ack_recv_header),MSG_WAITALL,
                             (struct sockaddr *)&udp_socket,&temp_len))==sizeof(ack_recv_header)){
                 if(ack_recv_header.message_type==4){
-                    cout<<"ACK recieved"<<endl;
+                    printf("ACK recieved\n");
                 }
             }
 
@@ -119,15 +121,12 @@ int main(int argc, char *argv[])
             //cout<<"Shutdown status "<<shutdown(udp_fd, SHUT_RDWR)<<endl;
             close(udp_fd);
         }else{
-            cout<<"Hi"<<endl;
+            printf("Hi\n");
         }
 
     } 
 
-    printf("\n");
-
-    if(n < 0)
-    {
+    if(n < 0){
         printf("\n Read error \n");
     } 
 

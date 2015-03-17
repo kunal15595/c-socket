@@ -1,4 +1,4 @@
-#include "server_communication_class.h"
+#include "server_comm.h"
 #include <stdio.h>
 #include <arpa/inet.h>//for htonl and sockaddr_in
 #include "header.h"
@@ -11,10 +11,10 @@
 #include <stdbool.h>
 
 
-void server_communication_func(int connfd){
-    struct message_header tcp_message_header;
-    if(read(connfd,&tcp_message_header,sizeof(tcp_message_header))==sizeof(tcp_message_header)){
-        if(tcp_message_header.message_type!=1){
+void server_run(int connfd){
+    struct message_header tcp_msg_head;
+    if(read(connfd,&tcp_msg_head,sizeof(tcp_msg_head))==sizeof(tcp_msg_head)){
+        if(tcp_msg_head.message_type!=1){
             close(connfd);
             return;
         }
@@ -78,8 +78,10 @@ void server_communication_func(int connfd){
     struct message_header input_header;
     struct message_header ack_header;
     struct sockaddr from_socket_addr;
+
     socklen_t temp_len;
     temp_len=sizeof(from_socket_addr);
+    
     //recvfrom flag MSG_WAITALL
     //This flag requests that the operation block until the full request is satisfied
     
@@ -107,6 +109,7 @@ void server_communication_func(int connfd){
                 sendto(udp_fd,&ack_header,sizeof(ack_header),MSG_WAITALL,(struct sockaddr *)&from_socket_addr,temp_len);
             }else{
                 printf("Error on port %d\n",udp_port);
+                printf("Should have received %d bytes but received %d bytes\n",input_header.message_length,count);
                 done=true;
             }
 

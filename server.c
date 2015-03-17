@@ -7,7 +7,7 @@
 #include <sys/socket.h>
 #include <errno.h>//for errno
 #include <signal.h>//for signal func
-#include "server_communication_class.h"
+#include "server_comm.h"
 #include "threadpool.h"
 #include <stdbool.h>
 
@@ -115,9 +115,8 @@ int main(int argc, char *argv[]){
     while(!stop){
         connfd = accept(listenfd, (struct sockaddr*)NULL ,NULL); // accept awaiting request
         if(connfd!=-1){
-            threadpool_add(tp,server_communication_func,connfd,0);
-            //http://stackoverflow.com/questions/7896223/
-            //how-to-schedule-member-function-for-execution-in-boostthreadpoool
+            threadpool_add(tp,server_run,connfd,0);
+
         }else{
             //sleep for 0.5 seconds
             usleep(500000);
