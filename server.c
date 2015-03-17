@@ -11,7 +11,7 @@
 #include "threadpool.h"
 #include <stdbool.h>
 
-#define TCP_PORT 8787
+#define TCP_PORT  7878
 #define QUEUE_SIZE 10
 #define POOL_SIZE 4
 
@@ -65,7 +65,7 @@ int main(int argc, char *argv[]){
     }
 
     if(tcp_port==0)
-        tcp_port=8787;
+        tcp_port = TCP_PORT;
    
 
     memset(&serv_addr, '0', sizeof(serv_addr));

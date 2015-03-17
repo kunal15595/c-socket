@@ -33,8 +33,7 @@ void server_run(int connfd){
 
     int udp_fd=0;
     //Not SOCK_NONBLOCK
-    if((udp_fd = socket(AF_INET, SOCK_DGRAM, 0))== -1)
-    {
+    if((udp_fd = socket(AF_INET, SOCK_DGRAM, 0))== -1){
         printf("Error : Could not create udp socket\n");
         printf("Errno %d\n",errno);
         close(connfd);
@@ -72,6 +71,7 @@ void server_run(int connfd){
     write(connfd,&header,sizeof(header));
     write(connfd,message_buf,strlen(message_buf));
 
+    // close tcp connection
     close(connfd);
 
     int count;
@@ -81,7 +81,7 @@ void server_run(int connfd){
 
     socklen_t temp_len;
     temp_len=sizeof(from_socket_addr);
-    
+
     //recvfrom flag MSG_WAITALL
     //This flag requests that the operation block until the full request is satisfied
     

@@ -135,8 +135,8 @@ void client_run(client_comm *cl)
 	header.message_type = 3;
 	header.message_length = 0;
 	socklen_t temp_len = sizeof(client_udp);
-	if (inet_pton(AF_INET, cl->server_addr, &client_udp.sin_addr) <= 0)
-	{
+
+	if (inet_pton(AF_INET, cl->server_addr, &client_udp.sin_addr) <= 0){
 		printf("\n inet_pton error occured\n");
 		return;
 	}
@@ -146,8 +146,7 @@ void client_run(client_comm *cl)
 	sendto(udp_id, &header, sizeof(header), MSG_WAITALL, (struct sockaddr *)&client_udp, temp_len);
 	printf("Connection Terminating Packet sent\n");
 	struct message_header ack;
-	if (recvfrom(udp_id, &ack, sizeof(ack), MSG_WAITALL, (struct sockaddr *)&client_udp, &temp_len) == sizeof(ack))
-	{
+	if (recvfrom(udp_id, &ack, sizeof(ack), MSG_WAITALL, (struct sockaddr *)&client_udp, &temp_len) == sizeof(ack)){
 		if (ack.message_type == 4)
 			printf("Acknowledgement Recieved\n");
 		else
