@@ -28,7 +28,7 @@ int main(int argc, char *argv[]){
     }
 
     char *server_addr = "127.0.0.1";
-    char *file = "client.cpp";
+    char *file = "client.c";
 
     int opt;
     while ((opt = getopt (argc, argv, "p:i:f:")) != -1){
