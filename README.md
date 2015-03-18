@@ -1,11 +1,11 @@
 # c-socket
 Socket implementation in C
 
-* Compile	
-Server	--> gcc server.c server_comm.c threadpool.c -o server -pthread
-Client	--> gcc client.c client_comm.c -o client
+### Compile	
+	* Server	--> gcc server.c server_comm.c threadpool.c -o server -pthread
+	* Client	--> gcc client.c client_comm.c -o client
 
-* Run
+### Run
 	* server usage --> ./server [-p tcp_port] [-t thread_pool_size]
 	* client usage --> ./client [-p server_tcp_port] [-i server_ip] [-f file_to_transfer]
 
